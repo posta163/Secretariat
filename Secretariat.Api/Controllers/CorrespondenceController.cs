@@ -25,6 +25,8 @@ namespace Secretariat.Api.Controllers
             return Ok(correspondences);
         }
 
+
+
         [HttpPost]
         public async Task<ActionResult<Correspondence>> Create(Correspondence correspondence)
         {
@@ -42,6 +44,9 @@ namespace Secretariat.Api.Controllers
                 correspondence);
         }
 
+
+
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Correspondence>> GetById(int id)
         {
@@ -53,6 +58,28 @@ namespace Secretariat.Api.Controllers
             }
 
             return Ok(correspondence);
+        }
+
+
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, Correspondence updatedCorrespondence)
+        {
+            var correspondence = await _context.Correspondences.FindAsync(id);
+
+            if (correspondence == null)
+            {
+                return NotFound();
+            }
+
+            correspondence.Number = updatedCorrespondence.Number;
+            correspondence.Sender = updatedCorrespondence.Sender;
+            correspondence.Subject = updatedCorrespondence.Subject;
+            correspondence.ReceivedDate = updatedCorrespondence.ReceivedDate;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
