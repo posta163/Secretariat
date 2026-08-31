@@ -41,5 +41,18 @@ namespace Secretariat.Api.Controllers
                 $"/api/correspondence/{correspondence.Id}",
                 correspondence);
         }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Correspondence>> GetById(int id)
+        {
+            var correspondence = await _context.Correspondences.FindAsync(id);
+
+            if (correspondence == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(correspondence);
+        }
     }
 }
