@@ -1,4 +1,12 @@
+using Microsoft.EntityFrameworkCore;
+using Secretariat.Api.Data;
+
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<SecretariatDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
 

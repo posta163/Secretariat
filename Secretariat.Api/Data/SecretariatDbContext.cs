@@ -1,6 +1,15 @@
-﻿namespace Secretariat.Api.Data
+﻿using Microsoft.EntityFrameworkCore;
+using Secretariat.Api.Models;
+
+namespace Secretariat.Api.Data
 {
-    public class SecretariatDbContext
+    public class SecretariatDbContext : DbContext
     {
+        public SecretariatDbContext(DbContextOptions<SecretariatDbContext> options)
+            : base(options)
+        {
+        }
+
+        public DbSet<Correspondence> Correspondences { get; set; }
     }
 }
