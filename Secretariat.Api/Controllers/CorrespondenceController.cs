@@ -18,10 +18,28 @@ namespace Secretariat.Api.Controllers
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Correspondence>>> GetAll()
+
         {
             var correspondences = await _context.Correspondences.ToListAsync();
 
             return Ok(correspondences);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Correspondence>> Create(Correspondence correspondence)
+        {
+            correspondence.Id = 0;
+            correspondence.CreatedDate = DateTime.UtcNow;
+            correspondence.IsRead = false;
+            correspondence.ReadAt = null;
+
+            _context.Correspondences.Add(correspondence);
+
+            await _context.SaveChangesAsync();
+
+            return Created(
+                $"/api/correspondence/{correspondence.Id}",
+                correspondence);
         }
     }
 }
