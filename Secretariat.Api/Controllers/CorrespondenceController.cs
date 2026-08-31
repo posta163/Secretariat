@@ -35,6 +35,13 @@ namespace Secretariat.Api.Controllers
             correspondence.IsRead = false;
             correspondence.ReadAt = null;
 
+            var year = DateTime.UtcNow.Year;
+
+            var count = await _context.Correspondences
+                .CountAsync(c => c.CreatedDate.Year == year);
+
+            correspondence.Number = $"COR/{year}/{count + 1:D4}";
+
             _context.Correspondences.Add(correspondence);
 
             await _context.SaveChangesAsync();
