@@ -49,12 +49,29 @@ namespace Secretariat.Api.Controllers
             }
 
 
+            if (correspondence.Type == CorrespondenceType.Unknown)
+            {
+                return BadRequest("Należy wybrać typ korespondencji.");
+            }
+
             var year = DateTime.UtcNow.Year;
 
-            var count = await _context.Correspondences
-                .CountAsync(c => c.CreatedDate.Year == year);
+            var prefix = correspondence.Type switch
+            {
+                CorrespondenceType.Incoming => "KP",
+                CorrespondenceType.Outgoing => "KW",
+                _ => throw new InvalidOperationException("Nieobsługiwany typ korespondencji.")
+            };
 
-            correspondence.Number = $"COR/{year}/{count + 1:D4}";
+            var count = await _context.Correspondences
+                .CountAsync(c =>
+                    c.CreatedDate.Year == year &&
+                    c.Type == correspondence.Type);
+
+            correspondence.Number =
+                $"{prefix}/{year}/{count + 1:D4}";
+
+
 
             _context.Correspondences.Add(correspondence);
 
