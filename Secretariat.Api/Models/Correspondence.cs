@@ -17,5 +17,8 @@
         public bool IsRead { get; set; }
 
         public DateTime? ReadAt { get; set; }
+        public int? RecipientUserId { get; set; }
+
+        public AppUser? RecipientUser { get; set; }
     }
 }

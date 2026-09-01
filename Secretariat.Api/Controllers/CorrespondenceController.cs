@@ -20,7 +20,9 @@ namespace Secretariat.Api.Controllers
         public async Task<ActionResult<IEnumerable<Correspondence>>> GetAll()
 
         {
-            var correspondences = await _context.Correspondences.ToListAsync();
+            var correspondences = await _context.Correspondences
+            .Include(c => c.RecipientUser)
+            .ToListAsync();
 
             return Ok(correspondences);
         }
@@ -34,6 +36,18 @@ namespace Secretariat.Api.Controllers
             correspondence.CreatedDate = DateTime.UtcNow;
             correspondence.IsRead = false;
             correspondence.ReadAt = null;
+
+            if (correspondence.RecipientUserId.HasValue)
+            {
+                var recipientExists = await _context.AppUsers
+                    .AnyAsync(u => u.Id == correspondence.RecipientUserId.Value);
+
+                if (!recipientExists)
+                {
+                    return BadRequest("Wybrany adresat nie istnieje.");
+                }
+            }
+
 
             var year = DateTime.UtcNow.Year;
 
@@ -72,7 +86,9 @@ namespace Secretariat.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Correspondence updatedCorrespondence)
         {
-            var correspondence = await _context.Correspondences.FindAsync(id);
+            var correspondence = await _context.Correspondences
+            .Include(c => c.RecipientUser)
+            .FirstOrDefaultAsync(c => c.Id == id);
 
             if (correspondence == null)
             {
