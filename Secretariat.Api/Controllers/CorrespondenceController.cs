@@ -121,5 +121,27 @@ namespace Secretariat.Api.Controllers
 
             return NoContent();
         }
+        [HttpPost("{id}/read")]
+        public async Task<IActionResult> MarkAsRead(int id)
+        {
+            var correspondence = await _context.Correspondences.FindAsync(id);
+
+            if (correspondence == null)
+            {
+                return NotFound("Korespondencja nie istnieje.");
+            }
+
+            if (correspondence.IsRead)
+            {
+                return NoContent();
+            }
+
+            correspondence.IsRead = true;
+            correspondence.ReadAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }
