@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Secretariat.Api.Data;
+using Secretariat.Api.Services.Storage;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,15 +9,18 @@ builder.Services.AddDbContext<SecretariatDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add services to the container.
+
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
 builder.Services.AddOpenApi();
+
+builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
