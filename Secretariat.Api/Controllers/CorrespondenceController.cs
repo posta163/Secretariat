@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Secretariat.Api.CurrentUser;
 using Secretariat.Api.Data;
 using Secretariat.Api.Models;
-using Secretariat.Api.Services.CurrentUser;
+
 
 namespace Secretariat.Api.Controllers
 {

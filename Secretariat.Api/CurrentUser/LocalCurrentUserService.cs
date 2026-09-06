@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Secretariat.Api.Data;
 using Secretariat.Api.Models;
-using Secretariat.Api.Services.CurrentUser;
+using Secretariat.Api.CurrentUser;
 
 namespace Secretariat.Api.CurrentUser
 {

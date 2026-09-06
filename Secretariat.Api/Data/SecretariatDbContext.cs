@@ -15,6 +15,8 @@ namespace Secretariat.Api.Data
         public DbSet<AppUser> AppUsers { get; set; }
 
         public DbSet<CorrespondenceAttachment> CorrespondenceAttachments { get; set; }
+
+        public DbSet<InternalCorrespondence> InternalCorrespondences { get; set; }
     }
 
 

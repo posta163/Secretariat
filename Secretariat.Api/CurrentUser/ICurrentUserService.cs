@@ -1,6 +1,6 @@
 ﻿using Secretariat.Api.Models;
 
-namespace Secretariat.Api.Services.CurrentUser
+namespace Secretariat.Api.CurrentUser
 {
     public interface ICurrentUserService
     {
