@@ -13,5 +13,7 @@
         public int? RecipientUserId { get; set; }
         public AppUser? RecipientUser { get; set; }
         public CorrespondenceType Type { get; set; }
+        public int? RelatedIncomingCorrespondenceId { get; set; }
+        public Correspondence? RelatedIncomingCorrespondence { get; set; }
     }
 }

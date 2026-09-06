@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Secretariat.Api.CurrentUser;
 using Secretariat.Api.Data;
-using Secretariat.Api.Services.Storage;
+using Secretariat.Api.Services.CurrentUser;
+using Secretariat.Api.Storage;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,10 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<ICurrentUserService, LocalCurrentUserService>();
 
 
 var app = builder.Build();

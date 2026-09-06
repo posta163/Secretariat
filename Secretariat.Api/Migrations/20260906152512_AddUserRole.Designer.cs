@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Secretariat.Api.Data;
 
@@ -11,9 +12,11 @@ using Secretariat.Api.Data;
 namespace Secretariat.Api.Migrations
 {
     [DbContext(typeof(SecretariatDbContext))]
-    partial class SecretariatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260906152512_AddUserRole")]
+    partial class AddUserRole
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,9 +79,6 @@ namespace Secretariat.Api.Migrations
                     b.Property<int?>("RecipientUserId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("RelatedIncomingCorrespondenceId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Sender")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -93,8 +93,6 @@ namespace Secretariat.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("RecipientUserId");
-
-                    b.HasIndex("RelatedIncomingCorrespondenceId");
 
                     b.ToTable("Correspondences");
                 });
@@ -145,13 +143,7 @@ namespace Secretariat.Api.Migrations
                         .WithMany()
                         .HasForeignKey("RecipientUserId");
 
-                    b.HasOne("Secretariat.Api.Models.Correspondence", "RelatedIncomingCorrespondence")
-                        .WithMany()
-                        .HasForeignKey("RelatedIncomingCorrespondenceId");
-
                     b.Navigation("RecipientUser");
-
-                    b.Navigation("RelatedIncomingCorrespondence");
                 });
 
             modelBuilder.Entity("Secretariat.Api.Models.CorrespondenceAttachment", b =>

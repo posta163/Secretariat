@@ -1,4 +1,4 @@
-﻿namespace Secretariat.Api.Services.Storage
+﻿namespace Secretariat.Api.Storage
 {
     public class LocalFileStorage : IFileStorage
     {

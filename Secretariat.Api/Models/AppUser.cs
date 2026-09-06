@@ -9,5 +9,7 @@
         public string Email { get; set; } = string.Empty;
 
         public string? EntraObjectId { get; set; }
+
+        public UserRole Role { get; set; } = UserRole.Employee;
     }
 }

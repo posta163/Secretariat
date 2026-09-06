@@ -76,3 +76,15 @@ public DbSet<AppUser> AppUsers { get; set; }
 | GET		| `/api/appusers`	| Pobiera listę użytkowników	|
 | POST		| `/api/appusers`	| Dodaje nowego użytkownika		|
 
+
+
+## Dzień 3
+
+
+Trzeciego dnia prac rozszerzono moduł korespondencji o obsługę załączników oraz oznaczanie korespondencji jako odczytanej.
+
+### Załączniki
+
+Utworzono model:
+
+CorrespondenceAttachment

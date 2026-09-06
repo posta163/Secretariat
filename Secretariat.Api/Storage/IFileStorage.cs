@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace Secretariat.Api.Services.Storage
+namespace Secretariat.Api.Storage
 {
     public interface IFileStorage
     {

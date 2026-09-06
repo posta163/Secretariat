@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Secretariat.Api.Data;
 using Secretariat.Api.Models;
-using Secretariat.Api.Services.Storage;
+using Secretariat.Api.Storage;
 
 namespace Secretariat.Api.Controllers
 {

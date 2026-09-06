@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Secretariat.Api.CurrentUser;
 using Secretariat.Api.Data;
 using Secretariat.Api.Models;
+using Secretariat.Api.Services.CurrentUser;
 
 namespace Secretariat.Api.Controllers
 {
@@ -10,19 +12,43 @@ namespace Secretariat.Api.Controllers
     public class CorrespondenceController : ControllerBase
     {
         private readonly SecretariatDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public CorrespondenceController(SecretariatDbContext context)
-        {
-            _context = context;
-        }
+        public CorrespondenceController(
+            SecretariatDbContext context,
+            ICurrentUserService currentUserService)
+                {
+                 _context = context;
+                 _currentUserService = currentUserService;
+                 }
 
+
+
+
+
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Correspondence>>> GetAll()
-
         {
-            var correspondences = await _context.Correspondences
-            .Include(c => c.RecipientUser)
-            .ToListAsync();
+            var currentUser = await _currentUserService.GetCurrentUserAsync();
+
+            if (currentUser == null)
+            {
+                return Unauthorized("Nie udało się ustalić użytkownika.");
+            }
+
+            var query = _context.Correspondences
+                .Include(c => c.RecipientUser)
+                .AsQueryable();
+
+            if (currentUser.Role == UserRole.Employee ||
+                currentUser.Role == UserRole.Approver)
+            {
+                query = query.Where(c =>
+                    c.RecipientUserId == currentUser.Id);
+            }
+
+            var correspondences = await query.ToListAsync();
 
             return Ok(correspondences);
         }
@@ -52,6 +78,31 @@ namespace Secretariat.Api.Controllers
             if (correspondence.Type == CorrespondenceType.Unknown)
             {
                 return BadRequest("Należy wybrać typ korespondencji.");
+            }
+
+            if (correspondence.RelatedIncomingCorrespondenceId.HasValue)
+            {
+                if (correspondence.Type != CorrespondenceType.Outgoing)
+                {
+                    return BadRequest(
+                        "Tylko korespondencja wychodząca może być odpowiedzią na korespondencję przychodzącą.");
+                }
+
+                var relatedIncoming = await _context.Correspondences
+                    .FirstOrDefaultAsync(c =>
+                        c.Id == correspondence.RelatedIncomingCorrespondenceId.Value);
+
+                if (relatedIncoming == null)
+                {
+                    return BadRequest(
+                        "Wskazana korespondencja przychodząca nie istnieje.");
+                }
+
+                if (relatedIncoming.Type != CorrespondenceType.Incoming)
+                {
+                    return BadRequest(
+                        "Powiązana korespondencja musi być typu przychodzącego.");
+                }
             }
 
             var year = DateTime.UtcNow.Year;
@@ -88,7 +139,10 @@ namespace Secretariat.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Correspondence>> GetById(int id)
         {
-            var correspondence = await _context.Correspondences.FindAsync(id);
+            var correspondence = await _context.Correspondences
+                .Include(c => c.RecipientUser)
+                .Include(c => c.RelatedIncomingCorrespondence)
+                .FirstOrDefaultAsync(c => c.Id == id);
 
             if (correspondence == null)
             {
