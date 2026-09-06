@@ -88,3 +88,55 @@ Trzeciego dnia prac rozszerzono moduł korespondencji o obsługę załączników
 Utworzono model:
 
 CorrespondenceAttachment
+
+
+## Dzień 4
+
+- Dodano role użytkowników.
+- Dodano lokalny mechanizm identyfikacji aktualnego użytkownika.
+- Dodano filtrowanie korespondencji zależnie od roli użytkownika.
+- Dodano relację pomiędzy korespondencją wychodzącą i przychodzącą.
+- Dodano walidację relacji KW → KP.
+- Rozszerzono szczegóły korespondencji o powiązany dokument.
+- Utworzono moduł korespondencji wewnętrznej.
+- Dodano automatyczną numerację KWN.
+- Dodano tworzenie, listowanie i pobieranie szczegółów korespondencji wewnętrznej.
+- Autor korespondencji wewnętrznej jest ustalany na podstawie aktualnego użytkownika.
+
+
+### Role użytkowników
+
+Role użytkowników są przechowywane jako wartości liczbowe  `UserRole`.
+
+| Wartość	| Nazwa w kodzie	| Znaczenie			|
+|			|					|					|
+| 1			| Employee			| Pracownik			|
+| 2			| Approver			| Akceptujący		|
+| 3			| Secretariat		| Sekretariat		|
+| 4			| Administrator		| Administrator		|
+
+
+###  Typ korespondencji
+
+Typ korespondencji jest przechowywany `CorrespondenceType`.
+
+|Wartość	|	Nazwa w kodzie		| Znaczenie		|
+|			|						|				|
+|0			| Unknown				| typ			|
+|1			| Incoming				| przychodząca	|
+|2			| Outgoing				| wychodząca	|
+
+
+Status korespondencji wewnętrznej
+
+Status korespondencji wewnętrznej jest przechowywany  `InternalCorrespondenceStatus`.
+
+|Wartość	|	Nazwa w kodzie		| Znaczenie		|
+|			|						|				|
+|1			| New					| Nowa			|
+|2			| InProgress			| W trakcie		|
+|3			| Approved				| Zaakceptowana	|
+|4			| Rejected				| Odrzucona		|
+
+
+
