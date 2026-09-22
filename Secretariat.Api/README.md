@@ -188,7 +188,7 @@ Jedno odrzucenie kończy cały proces. Po osiągnięciu końcowego statusu `Appr
 ### Status pojedynczej akceptacji
 
 | Wartość	| Nazwa w kodzie	| Znaczenie				|
-|--------:	|----------------	|-----------			|
+|--------	|----------------	|-----------			|
 | 1			| Pending			| Oczekuje na decyzję	|
 | 2			| Approved			| Zaakceptowana			|
 | 3			| Rejected			| Odrzucona				|
@@ -204,4 +204,127 @@ Status pojedynczej akceptacji jest przechowywany jako `InternalApprovalStatus` i
 | GET		| `/api/internal-correspondence/{id}`			| Pobiera szczegóły dokumentu i statusy akceptujących	|
 | POST		| `/api/internal-correspondence/{id}/approve`	| Zatwierdza dokument przez przypisanego akceptującego	|
 | POST		| `/api/internal-correspondence/{id}/reject`	| Odrzuca dokument przez przypisanego akceptującego		|
+
+
+
+
+
+## Dzień 6
+
+Szóstego dnia prac utworzono podstawowy moduł zarządzania umowami. Dodano modele, strukturę bazy danych, automatyczną numerację oraz endpointy umożliwiające tworzenie, przeglądanie, wyszukiwanie i edycję umów.
+
+Moduł został przygotowany pod planowany proces akceptacji umów przez dwóch użytkowników oraz późniejszą integrację z Microsoft 365.
+
+### Model umowy
+
+Utworzono model `Contract`, zawierający następujące informacje:
+
+- `Id` – identyfikator umowy,
+- `Number` – automatycznie generowany numer,
+- `Contractor` – kontrahent,
+- `Subject` – przedmiot umowy,
+- `ContractDate` – data zawarcia umowy,
+- `ValidFrom` i `ValidTo` – okres obowiązywania,
+- `ContractualPenalties` – kary umowne,
+- `Comment` – dodatkowy komentarz,
+- `CreatedAt` – data utworzenia rekordu,
+- `CreatedByUserId` – autor wniosku,
+- `ResponsibleUserId` – osoba odpowiedzialna za umowę,
+- `Status` – aktualny status umowy.
+
+Autor wniosku i osoba odpowiedzialna mogą być różnymi użytkownikami.
+
+### Statusy umów
+
+Utworzono osobny enum `ContractStatus`.
+
+| Wartość	| Nazwa w kodzie	| Znaczenie				|
+|--------:	|----------------	|-----------			|
+| 1			| New				| Nowa					|
+| 2			| InProgress		| W trakcie akceptacji	|
+| 3			| Approved			| Zaakceptowana			|
+| 4			| Rejected			| Odrzucona				|
+
+Obecnie nowe umowy otrzymują status `New`. Pozostałe statusy zostaną wykorzystane w procesie akceptacji.
+
+### Baza danych
+
+Do `SecretariatDbContext` dodano:
+
+`DbSet<Contract> Contracts`
+
+Skonfigurowano dwie relacje z tabelą `AppUsers`:
+
+- autor wniosku,
+- osoba odpowiedzialna za umowę.
+
+Zastosowano `DeleteBehavior.Restrict`, aby usunięcie użytkownika nie powodowało automatycznego usunięcia powiązanych umów.
+
+Dodano również unikalny indeks dla numeru umowy.
+
+Utworzono i wykonano migrację `AddContracts`.
+
+### Automatyczna numeracja
+
+Numer umowy jest generowany przez backend w formacie:
+
+`UM/RRRR/NNNN`
+
+Przykład:
+
+`UM/2026/0001`
+
+### DTO i walidacja
+
+Utworzono:
+
+- `CreateContractRequest`,
+- `UpdateContractRequest`.
+
+Zastosowanie DTO oddziela dane przesyłane przez klienta od encji bazy danych.
+
+Backend samodzielnie ustala numer umowy, autora, datę utworzenia i początkowy status.
+
+Dodano walidację:
+
+- wymaganych danych kontrahenta i przedmiotu umowy,
+- daty zawarcia umowy,
+- poprawności okresu obowiązywania,
+- istnienia osoby odpowiedzialnej.
+
+### Endpointy modułu umów
+
+| Metoda	| Endpoint						| Opis						|
+|--------	|----------						|------						|
+| POST		| `/api/contracts`				| Tworzy nową umowę			|
+| GET		| `/api/contracts`				| Pobiera listę umów		|
+| GET		| `/api/contracts/{id}`			| Pobiera szczegóły umowy	|
+| GET		| `/api/contracts?search=tekst` | Wyszukuje umowy			|
+| PUT		| `/api/contracts/{id}`			| Edytuje istniejącą umowę	|
+
+### Wyszukiwanie
+
+Dodano wyszukiwanie umów według:
+
+- numeru umowy,
+- nazwy kontrahenta,
+- przedmiotu umowy.
+
+Wykorzystano LINQ i `IQueryable`, dzięki czemu filtrowanie jest wykonywane w bazie danych, a nie na wcześniej pobranej kolekcji.
+
+W zapytaniach służących wyłącznie do odczytu zastosowano `AsNoTracking()`.
+
+### Edycja umów
+
+Dodano możliwość edycji nowych wniosków o umowę.
+
+Uprawnienia do edycji posiadają:
+
+- autor wniosku,
+- Sekretariat,
+- Administrator.
+
+Edycja jest możliwa wyłącznie dla umów o statusie `New`.
+
+Numer, autor, data utworzenia i status nie podlegają edycji przez ten endpoint.
 

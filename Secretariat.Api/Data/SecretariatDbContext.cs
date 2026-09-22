@@ -44,8 +44,30 @@ namespace Secretariat.Api.Data
                     a.ApproverUserId
                 })
                 .IsUnique();
+
+
+            // Relacja: umowa -> autor wniosku
+            modelBuilder.Entity<Contract>()
+                .HasOne(c => c.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relacja: umowa -> osoba odpowiedzialna
+            modelBuilder.Entity<Contract>()
+                .HasOne(c => c.ResponsibleUser)
+                .WithMany()
+                .HasForeignKey(c => c.ResponsibleUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Numer umowy musi być unikalny
+            modelBuilder.Entity<Contract>()
+                .HasIndex(c => c.Number)
+                .IsUnique();
         }
 
-        }
+        public DbSet<Contract> Contracts { get; set; }
+
+    }
 
     }
