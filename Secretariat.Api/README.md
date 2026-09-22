@@ -140,3 +140,68 @@ Status korespondencji wewnętrznej jest przechowywany  `InternalCorrespondenceSt
 
 
 
+## Dzień 5
+
+Piątego dnia prac rozbudowano moduł korespondencji wewnętrznej o proces akceptacji dokumentów przez wyznaczonych użytkowników.
+
+Zrealizowano:
+
+- utworzenie modelu `InternalCorrespondenceApprover`,
+- dodanie indywidualnych statusów akceptacji,
+- skonfigurowanie relacji między dokumentami a użytkownikami,
+- utworzenie migracji `AddInternalCorrespondenceApprovers`,
+- dodanie DTO `CreateInternalCorrespondenceRequest`,
+- możliwość wskazania kilku akceptujących podczas tworzenia dokumentu,
+- walidację użytkowników posiadających rolę `Approver`,
+- obsługę zatwierdzania i odrzucania dokumentów,
+- automatyczną aktualizację statusu całej korespondencji,
+- zapisywanie daty podjęcia decyzji przez każdego akceptującego.
+
+### Przypisywanie akceptujących
+
+Podczas tworzenia korespondencji wewnętrznej można wskazać identyfikatory użytkowników odpowiedzialnych za jej akceptację.
+
+Backend sprawdza, czy:
+
+- wskazano przynajmniej jednego akceptującego,
+- lista nie zawiera powtarzających się użytkowników,
+- wszyscy wskazani użytkownicy istnieją,
+- każdy z nich posiada rolę `Approver`.
+
+Autor, numer dokumentu oraz początkowy status są ustalane przez backend. Każdy przypisany akceptujący otrzymuje początkowy status `Pending`.
+
+### Model i relacje
+
+Utworzono model `InternalCorrespondenceApprover`, który łączy dokument z przypisanym użytkownikiem oraz przechowuje jego indywidualną decyzję i datę jej podjęcia.
+
+W `SecretariatDbContext` skonfigurowano relacje i unikalny indeks uniemożliwiający dwukrotne przypisanie tego samego użytkownika do jednego dokumentu.
+
+### Proces akceptacji
+
+- `New` – nowy dokument oczekujący na decyzje.
+- `InProgress` – przynajmniej jedna osoba zaakceptowała dokument, ale pozostałe decyzje są jeszcze wymagane.
+- `Approved` – wszyscy przypisani akceptujący zaakceptowali dokument.
+- `Rejected` – przynajmniej jedna osoba odrzuciła dokument.
+
+Jedno odrzucenie kończy cały proces. Po osiągnięciu końcowego statusu `Approved` lub `Rejected` nie można podejmować kolejnych decyzji.
+
+### Status pojedynczej akceptacji
+
+| Wartość	| Nazwa w kodzie	| Znaczenie				|
+|--------:	|----------------	|-----------			|
+| 1			| Pending			| Oczekuje na decyzję	|
+| 2			| Approved			| Zaakceptowana			|
+| 3			| Rejected			| Odrzucona				|
+
+Status pojedynczej akceptacji jest przechowywany jako `InternalApprovalStatus` i jest niezależny od statusu całego dokumentu.
+
+### Endpointy
+
+| Metoda	| Endpoint										| Opis													|
+|--------	|----------										|------													|
+| POST		| `/api/internal-correspondence`				| Tworzy dokument z wybranymi akceptującymi				|
+| GET		| `/api/internal-correspondence`				| Pobiera listę dokumentów								|
+| GET		| `/api/internal-correspondence/{id}`			| Pobiera szczegóły dokumentu i statusy akceptujących	|
+| POST		| `/api/internal-correspondence/{id}/approve`	| Zatwierdza dokument przez przypisanego akceptującego	|
+| POST		| `/api/internal-correspondence/{id}/reject`	| Odrzuca dokument przez przypisanego akceptującego		|
+
