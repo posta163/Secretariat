@@ -18,5 +18,10 @@
         public int CreatedByUserId { get; set; }
 
         public AppUser? CreatedByUser { get; set; }
+
+        public ICollection<InternalCorrespondenceApprover> Approvers { get; set; }
+    = new List<InternalCorrespondenceApprover>();
     }
+
+
 }
