@@ -328,3 +328,102 @@ Edycja jest możliwa wyłącznie dla umów o statusie `New`.
 
 Numer, autor, data utworzenia i status nie podlegają edycji przez ten endpoint.
 
+
+
+
+
+
+## Dzień 7
+
+Siódmego dnia prac rozbudowano moduł umów o proces akceptacji przez kierownika i dyrektora oraz obsługę załączników.
+
+Wykorzystano rozwiązania opracowane wcześniej dla korespondencji wewnętrznej, dostosowując je do procesu zatwierdzania umów przez dwie różne osoby.
+
+### Proces akceptacji umów
+
+Utworzono modele:
+
+- `ContractApprover`,
+- `ContractApproverRole`,
+- `ContractApprovalStatus`.
+
+Każda umowa może mieć dwóch przypisanych akceptujących: kierownika i dyrektora.
+
+Podczas tworzenia umowy backend sprawdza, czy obie osoby istnieją, posiadają rolę `Approver` i są różnymi użytkownikami.
+
+Każdy akceptujący ma własny status oraz datę podjęcia decyzji.
+
+### Role akceptujących
+
+| Wartość	| Nazwa w kodzie	| Znaczenie |
+|--------:	|----------------	|-----------|
+| 1			| Manager			| Kierownik |
+| 2			| Director			| Dyrektor	|
+
+### Statusy akceptacji
+
+| Wartość	| Nazwa w kodzie	| Znaczenie				|
+|--------:	|----------------	|-----------			|
+| 1			| Pending			| Oczekuje na decyzję	|
+| 2			| Approved			| Zaakceptowana			|
+| 3			| Rejected			| Odrzucona				|
+
+Zatwierdzenie przez pierwszego akceptującego zmienia status umowy na `InProgress`.
+
+Umowa otrzymuje status `Approved` po zatwierdzeniu przez obie osoby.
+
+Odrzucenie przez jednego akceptującego kończy proces i zmienia status umowy na `Rejected`.
+
+Dodano również blokadę ponownego podejmowania decyzji oraz zmiany zakończonego procesu akceptacji.
+
+
+### Załączniki do umów
+
+Utworzono modele:
+
+- `ContractAttachment`,
+- `ContractAttachmentType`.
+
+Rozróżniono dwa rodzaje załączników:
+
+| Wartość	| Nazwa w kodzie	| Znaczenie				|
+|--------:	|----------------	|-----------			|
+| 1			| Original			| Dokument podstawowy	|
+| 2			| Signed			| Dokument podpisany	|
+	
+Model załącznika przechowuje nazwę pliku, rozmiar, typ, ścieżkę, datę przesłania oraz identyfikator użytkownika, który dodał dokument.
+
+Rozszerzono `IFileStorage` i `LocalFileStorage` o obsługę plików umów.
+
+Pliki są zapisywane lokalnie w katalogu:
+
+`uploads/contracts/{contractId}`
+
+Metadane plików są przechowywane w bazie danych.
+
+
+
+### Bezpieczeństwo załączników
+
+Dodano kontrolę dostępu do przesyłania i pobierania plików.
+
+Dokument podstawowy mogą przesłać uprawnieni użytkownicy, jeżeli umowa ma status `New`.
+
+Podpisaną wersję może przesłać przypisany akceptujący przed podjęciem własnej decyzji.
+
+Wprowadzono ograniczenie rozmiaru pliku do 10 MB oraz podstawową walidację dozwolonych rozszerzeń.
+
+W obecnym MVP aplikacja nie weryfikuje kryptograficznej poprawności podpisu elektronicznego.
+
+### Endpointy dodane w Dniu 7
+
+| Metoda	| Endpoint													| Opis						|
+|--------																|----------					|
+| POST		| `/api/contracts/{id}/approve`								| Zatwierdza umowę			|
+| POST		| `/api/contracts/{id}/reject`								| Odrzuca umowę				|
+| POST		| `/api/contracts/{id}/attachments`							| Przesyła załącznik		|
+| GET		| `/api/contracts/{id}/attachments`							| Pobiera listę załączników |
+| GET		| `/api/contracts/{id}/attachments/{attachmentId}/download` | Pobiera wskazany plik		|
+
+Rozszerzono również endpoint szczegółów umowy o listę akceptujących, ich funkcje, statusy i daty decyzji.
+
