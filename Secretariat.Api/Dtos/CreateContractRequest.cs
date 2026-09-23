@@ -24,5 +24,14 @@ namespace Secretariat.Api.Dtos
 
         [Range(1, int.MaxValue)]
         public int ResponsibleUserId { get; set; }
+
+        
+        
+        
+        [Range(1, int.MaxValue)]
+        public int ManagerUserId { get; set; }
+
+        [Range(1, int.MaxValue)]
+        public int DirectorUserId { get; set; }
     }
 }

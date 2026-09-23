@@ -1,17 +1,43 @@
-﻿namespace Secretariat.Api.Storage
+﻿
+namespace Secretariat.Api.Storage
 {
     public class LocalFileStorage : IFileStorage
     {
         private readonly IWebHostEnvironment _environment;
 
-        public LocalFileStorage(IWebHostEnvironment environment)
+        public LocalFileStorage(
+            IWebHostEnvironment environment)
         {
             _environment = environment;
         }
 
-        public async Task<FileStorageResult> SaveAsync(
+        // Dotychczasowy zapis załączników korespondencji.
+        public Task<FileStorageResult> SaveAsync(
             IFormFile file,
             int correspondenceId)
+        {
+            return SaveToDirectoryAsync(
+                file,
+                "correspondence",
+                correspondenceId);
+        }
+
+        // Nowy zapis załączników umów.
+        public Task<FileStorageResult> SaveContractAsync(
+            IFormFile file,
+            int contractId)
+        {
+            return SaveToDirectoryAsync(
+                file,
+                "contracts",
+                contractId);
+        }
+
+        // Wspólny mechanizm zapisywania plików.
+        private async Task<FileStorageResult> SaveToDirectoryAsync(
+            IFormFile file,
+            string category,
+            int documentId)
         {
             var extension = Path.GetExtension(file.FileName);
 
@@ -20,8 +46,8 @@
 
             var relativeDirectory = Path.Combine(
                 "uploads",
-                "correspondence",
-                correspondenceId.ToString());
+                category,
+                documentId.ToString());
 
             var physicalDirectory = Path.Combine(
                 _environment.ContentRootPath,
@@ -33,10 +59,10 @@
                 physicalDirectory,
                 storedFileName);
 
-            await using var stream =
-                new FileStream(
-                    physicalPath,
-                    FileMode.Create);
+            await using var stream = new FileStream(
+                physicalPath,
+                FileMode.CreateNew,
+                FileAccess.Write);
 
             await file.CopyToAsync(stream);
 
@@ -49,7 +75,10 @@
                 relativePath);
         }
 
-        public Task<Stream> OpenReadAsync(string relativePath)
+        // Odczyt pliku na podstawie ścieżki
+        // zapisanej wcześniej w bazie danych.
+        public Task<Stream> OpenReadAsync(
+            string relativePath)
         {
             var physicalPath = Path.Combine(
                 _environment.ContentRootPath,

@@ -32,5 +32,11 @@
         public int ResponsibleUserId { get; set; }
 
         public AppUser? ResponsibleUser { get; set; }
+
+        public ICollection<ContractApprover> Approvers { get; set; }
+         = new List<ContractApprover>();
+
+        public ICollection<ContractAttachment> Attachments { get; set; }
+         = new List<ContractAttachment>();
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Secretariat.Api.Data;
 
@@ -11,9 +12,11 @@ using Secretariat.Api.Data;
 namespace Secretariat.Api.Migrations
 {
     [DbContext(typeof(SecretariatDbContext))]
-    partial class SecretariatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260923164826_AddContractApprovers")]
+    partial class AddContractApprovers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -142,54 +145,6 @@ namespace Secretariat.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("ContractApprovers");
-                });
-
-            modelBuilder.Entity("Secretariat.Api.Models.ContractAttachment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ContractId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("OriginalFileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("StoredFileName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UploadedByUserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.HasIndex("UploadedByUserId");
-
-                    b.ToTable("ContractAttachments");
                 });
 
             modelBuilder.Entity("Secretariat.Api.Models.Correspondence", b =>
@@ -386,25 +341,6 @@ namespace Secretariat.Api.Migrations
                     b.Navigation("Contract");
                 });
 
-            modelBuilder.Entity("Secretariat.Api.Models.ContractAttachment", b =>
-                {
-                    b.HasOne("Secretariat.Api.Models.Contract", "Contract")
-                        .WithMany("Attachments")
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Secretariat.Api.Models.AppUser", "UploadedByUser")
-                        .WithMany()
-                        .HasForeignKey("UploadedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Contract");
-
-                    b.Navigation("UploadedByUser");
-                });
-
             modelBuilder.Entity("Secretariat.Api.Models.Correspondence", b =>
                 {
                     b.HasOne("Secretariat.Api.Models.AppUser", "RecipientUser")
@@ -464,8 +400,6 @@ namespace Secretariat.Api.Migrations
             modelBuilder.Entity("Secretariat.Api.Models.Contract", b =>
                 {
                     b.Navigation("Approvers");
-
-                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("Secretariat.Api.Models.InternalCorrespondence", b =>

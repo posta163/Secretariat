@@ -22,6 +22,10 @@ namespace Secretariat.Api.Controllers
             _currentUserService = currentUserService;
         }
 
+  
+        
+        
+        
         // POST /api/contracts
         [HttpPost]
         public async Task<IActionResult> Create(
@@ -71,6 +75,27 @@ namespace Secretariat.Api.Controllers
                     "Wskazana osoba odpowiedzialna nie istnieje.");
             }
 
+
+            // Kierownik i dyrektor muszą być różnymi osobami.
+            if (request.ManagerUserId == request.DirectorUserId)
+            {
+                return BadRequest(
+                    "Kierownik i dyrektor muszą być różnymi użytkownikami.");
+            }
+
+            // Obie osoby muszą istnieć i posiadać rolę Approver.
+            var validApproversCount = await _context.AppUsers
+                .CountAsync(u =>
+                    (u.Id == request.ManagerUserId ||
+                     u.Id == request.DirectorUserId) &&
+                    u.Role == UserRole.Approver);
+
+            if (validApproversCount != 2)
+            {
+                return BadRequest(
+                    "Kierownik i dyrektor muszą istnieć i posiadać rolę Approver.");
+            }
+
             // Generujemy numer umowy.
             var now = DateTime.UtcNow;
             var year = now.Year;
@@ -91,7 +116,26 @@ namespace Secretariat.Api.Controllers
                 CreatedAt = now,
                 CreatedByUserId = currentUser.Id,
                 ResponsibleUserId = request.ResponsibleUserId,
-                Status = ContractStatus.New
+                Status = ContractStatus.New,
+                
+                
+                Approvers = new List<ContractApprover>
+                    {
+                        new ContractApprover
+                            {
+                                ApproverUserId = request.ManagerUserId,
+                                Role = ContractApproverRole.Manager,
+                                Status = ContractApprovalStatus.Pending
+                                },
+
+                        new ContractApprover
+                            {
+                                ApproverUserId = request.DirectorUserId,
+                                Role = ContractApproverRole.Director,
+                                Status = ContractApprovalStatus.Pending
+                            }
+}
+
             };
 
             _context.Contracts.Add(contract);
@@ -117,6 +161,12 @@ namespace Secretariat.Api.Controllers
                 });
         }
 
+ 
+        
+        
+        
+        
+        
         // GET /api/contracts/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
@@ -153,7 +203,23 @@ namespace Secretariat.Api.Controllers
                     c.ResponsibleUserId,
                     ResponsibleUserName = c.ResponsibleUser != null
                         ? c.ResponsibleUser.DisplayName
-                        : null
+                        : null,
+                    Approvers = c.Approvers
+                        .OrderBy(a => a.Role)
+                        .Select(a => new
+                            {
+                                a.ApproverUserId,
+
+                                ApproverName = a.ApproverUser != null
+                                ? a.ApproverUser.DisplayName
+                                : null,
+
+                                a.Role,
+                                a.Status,
+                                a.ReviewedAt
+    })
+
+    .ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -318,6 +384,185 @@ namespace Secretariat.Api.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+
+
+
+
+
+
+
+
+
+
+        [HttpPost("{id:int}/approve")]
+        public async Task<IActionResult> Approve(int id)
+        {
+            // Ustalamy aktualnego użytkownika.
+            var currentUser =
+                await _currentUserService.GetCurrentUserAsync();
+
+            if (currentUser == null)
+            {
+                return Unauthorized(
+                    "Nie udało się ustalić użytkownika.");
+            }
+
+            // Użytkownik musi mieć rolę Approver.
+            if (currentUser.Role != UserRole.Approver)
+            {
+                return StatusCode(
+                    403,
+                    "Tylko użytkownik z rolą Approver może zatwierdzać umowy.");
+            }
+
+            // Pobieramy umowę wraz z jej akceptującymi.
+            var contract = await _context.Contracts
+                .Include(c => c.Approvers)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (contract == null)
+            {
+                return NotFound("Umowa nie istnieje.");
+            }
+
+            // Sprawdzamy, czy użytkownik został przypisany.
+            var approval = contract.Approvers
+                .FirstOrDefault(a =>
+                    a.ApproverUserId == currentUser.Id);
+
+            if (approval == null)
+            {
+                return StatusCode(
+                    403,
+                    "Nie jesteś przypisany do akceptacji tej umowy.");
+            }
+
+            // Nie pozwalamy zmieniać zakończonego procesu.
+            if (contract.Status == ContractStatus.Approved ||
+                contract.Status == ContractStatus.Rejected)
+            {
+                return Conflict(
+                    "Proces akceptacji tej umowy został już zakończony.");
+            }
+
+            // Każdy akceptujący może podjąć decyzję tylko raz.
+            if (approval.Status != ContractApprovalStatus.Pending)
+            {
+                return Conflict(
+                    "Ten użytkownik podjął już decyzję.");
+            }
+
+            // Zapisujemy akceptację i datę decyzji.
+            approval.Status = ContractApprovalStatus.Approved;
+            approval.ReviewedAt = DateTime.UtcNow;
+
+            // Sprawdzamy, czy obie osoby zatwierdziły umowę.
+            var everyoneApproved = contract.Approvers.Count == 2 &&
+                contract.Approvers.All(a =>
+                    a.Status == ContractApprovalStatus.Approved);
+
+            contract.Status = everyoneApproved
+                ? ContractStatus.Approved
+                : ContractStatus.InProgress;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                contract.Id,
+                contract.Number,
+                ContractStatus = contract.Status,
+                ApproverUserId = currentUser.Id,
+                ApproverRole = approval.Role,
+                ApprovalStatus = approval.Status,
+                approval.ReviewedAt
+            });
+        }
+
+
+
+
+
+
+        [HttpPost("{id:int}/reject")]
+        public async Task<IActionResult> Reject(int id)
+        {
+            // Ustalenie aktualnego użytkownika.
+            var currentUser =
+                await _currentUserService.GetCurrentUserAsync();
+
+            if (currentUser == null)
+            {
+                return Unauthorized(
+                    "Nie udało się ustalić użytkownika.");
+            }
+
+            // Tylko użytkownik z rolą Approver.
+            if (currentUser.Role != UserRole.Approver)
+            {
+                return StatusCode(
+                    403,
+                    "Tylko użytkownik z rolą Approver może odrzucać umowy.");
+            }
+
+            // Pobranie umowy razem z przypisanymi akceptującymi.
+            var contract = await _context.Contracts
+                .Include(c => c.Approvers)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (contract == null)
+            {
+                return NotFound("Umowa nie istnieje.");
+            }
+
+            // Sprawdzenie przypisania użytkownika do tej umowy.
+            var approval = contract.Approvers
+                .FirstOrDefault(a =>
+                    a.ApproverUserId == currentUser.Id);
+
+            if (approval == null)
+            {
+                return StatusCode(
+                    403,
+                    "Nie jesteś przypisany do akceptacji tej umowy.");
+            }
+
+            // Zakończonego procesu nie można zmienić.
+            if (contract.Status == ContractStatus.Approved ||
+                contract.Status == ContractStatus.Rejected)
+            {
+                return Conflict(
+                    "Proces akceptacji tej umowy został już zakończony.");
+            }
+
+            // Akceptujący nie może ponownie podejmować decyzji.
+            if (approval.Status != ContractApprovalStatus.Pending)
+            {
+                return Conflict(
+                    "Ten użytkownik podjął już decyzję.");
+            }
+
+            // Zapisujemy odrzucenie i datę decyzji.
+            approval.Status = ContractApprovalStatus.Rejected;
+            approval.ReviewedAt = DateTime.UtcNow;
+
+            // Jedno odrzucenie kończy cały proces akceptacji.
+            contract.Status = ContractStatus.Rejected;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                contract.Id,
+                contract.Number,
+                ContractStatus = contract.Status,
+                ApproverUserId = currentUser.Id,
+                ApproverRole = approval.Role,
+                ApprovalStatus = approval.Status,
+                approval.ReviewedAt
+            });
         }
     }
 

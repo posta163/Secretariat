@@ -8,6 +8,10 @@ namespace Secretariat.Api.Storage
             IFormFile file,
             int correspondenceId);
 
+        Task<FileStorageResult> SaveContractAsync(
+          IFormFile file,
+          int contractId);
+
         Task<Stream> OpenReadAsync(string relativePath);
     }
 
