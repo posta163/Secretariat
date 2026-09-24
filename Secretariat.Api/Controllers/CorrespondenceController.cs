@@ -58,6 +58,34 @@ namespace Secretariat.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<Correspondence>> Create(Correspondence correspondence)
         {
+
+
+
+
+
+
+            var currentUser =
+                await _currentUserService.GetCurrentUserAsync();
+
+            if (currentUser == null)
+            {
+                return Unauthorized(
+                    "Nie udało się ustalić użytkownika.");
+            }
+
+            if (currentUser.Role != UserRole.Secretariat &&
+                currentUser.Role != UserRole.Administrator)
+            {
+                return StatusCode(
+                    403,
+                    "Tylko Sekretariat i Administrator mogą zarządzać korespondencją.");
+            }
+
+
+
+
+
+
             correspondence.Id = 0;
             correspondence.CreatedDate = DateTime.UtcNow;
             correspondence.IsRead = false;
@@ -149,6 +177,25 @@ namespace Secretariat.Api.Controllers
                 return NotFound();
             }
 
+
+
+            var currentUser =
+                await _currentUserService.GetCurrentUserAsync();
+
+            if (currentUser == null)
+            {
+                return Unauthorized(
+                    "Nie udało się ustalić użytkownika.");
+            }
+
+            if (!CanRead(currentUser, correspondence))
+            {
+                return StatusCode(
+                    403,
+                    "Nie masz dostępu do tej korespondencji.");
+            }
+
+
             return Ok(correspondence);
         }
 
@@ -157,6 +204,28 @@ namespace Secretariat.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, Correspondence updatedCorrespondence)
         {
+
+
+
+            var currentUser =
+                await _currentUserService.GetCurrentUserAsync();
+
+            if (currentUser == null)
+            {
+                return Unauthorized(
+                    "Nie udało się ustalić użytkownika.");
+            }
+
+            if (currentUser.Role != UserRole.Secretariat &&
+                currentUser.Role != UserRole.Administrator)
+            {
+                return StatusCode(
+                    403,
+                    "Tylko Sekretariat i Administrator mogą zarządzać korespondencją.");
+            }
+
+
+
             var correspondence = await _context.Correspondences
             .Include(c => c.RecipientUser)
             .FirstOrDefaultAsync(c => c.Id == id);
@@ -175,14 +244,33 @@ namespace Secretariat.Api.Controllers
 
             return NoContent();
         }
+      
+        
+        
+        
+        
+        
         [HttpPost("{id}/read")]
         public async Task<IActionResult> MarkAsRead(int id)
         {
+
+            var currentUser =await _currentUserService.GetCurrentUserAsync();
+
+            if (currentUser == null)
+                return Unauthorized();
+
+
             var correspondence = await _context.Correspondences.FindAsync(id);
 
             if (correspondence == null)
             {
-                return NotFound("Korespondencja nie istnieje.");
+                return NotFound();
+            }
+            if (!CanRead(currentUser, correspondence))
+            {
+                return StatusCode(
+                    403,
+                    "Nie masz dostępu do tej korespondencji.");
             }
 
             if (correspondence.IsRead)
@@ -196,6 +284,17 @@ namespace Secretariat.Api.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+
+
+        private static bool CanRead(
+            AppUser user,
+            Correspondence correspondence)
+        {
+            return user.Role == UserRole.Administrator
+                || user.Role == UserRole.Secretariat
+                || correspondence.RecipientUserId == user.Id;
         }
     }
 }

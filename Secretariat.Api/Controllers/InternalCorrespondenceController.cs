@@ -118,8 +118,16 @@ namespace Secretariat.Api.Controllers
                 return Unauthorized("Nie udało się ustalić użytkownika.");
             }
 
+
             var internalCorrespondences = await _context.InternalCorrespondences
+                .AsNoTracking()
                 .Include(c => c.CreatedByUser)
+                .Where(c =>
+                    currentUser.Role == UserRole.Administrator ||
+                    currentUser.Role == UserRole.Secretariat ||
+                    c.CreatedByUserId == currentUser.Id ||
+                    c.Approvers.Any(a =>
+                        a.ApproverUserId == currentUser.Id))
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
 
@@ -170,8 +178,22 @@ namespace Secretariat.Api.Controllers
 
             if (document == null)
             {
-                return NotFound(
-                    "Korespondencja wewnętrzna nie istnieje.");
+                return NotFound("Dokument nie istnieje.");
+            }
+
+            // Sprawdzamy uprawnienia do dokumentu.
+            var canRead =
+                currentUser.Role == UserRole.Administrator ||
+                currentUser.Role == UserRole.Secretariat ||
+                document.CreatedByUserId == currentUser.Id ||
+                document.Approvers.Any(a =>
+                    a.ApproverUserId == currentUser.Id);
+
+            if (!canRead)
+            {
+                return StatusCode(
+                    403,
+                    "Nie masz dostępu do tego dokumentu.");
             }
 
             return Ok(document);

@@ -171,6 +171,11 @@ namespace Secretariat.Api.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
+
+
+
+
+
             var currentUser =
                 await _currentUserService.GetCurrentUserAsync();
 
@@ -223,9 +228,26 @@ namespace Secretariat.Api.Controllers
                 })
                 .FirstOrDefaultAsync();
 
+
             if (contract == null)
             {
                 return NotFound("Umowa nie istnieje.");
+            }
+
+            // Sprawdzamy, czy użytkownik ma dostęp do umowy.
+            var canRead =
+                currentUser.Role == UserRole.Administrator ||
+                currentUser.Role == UserRole.Secretariat ||
+                contract.CreatedByUserId == currentUser.Id ||
+                contract.ResponsibleUserId == currentUser.Id ||
+                contract.Approvers.Any(a =>
+                    a.ApproverUserId == currentUser.Id);
+
+            if (!canRead)
+            {
+                return StatusCode(
+                    403,
+                    "Nie masz dostępu do tej umowy.");
             }
 
             return Ok(contract);

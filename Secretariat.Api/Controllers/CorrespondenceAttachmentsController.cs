@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Secretariat.Api.Data;
 using Secretariat.Api.Models;
 using Secretariat.Api.Storage;
+using Secretariat.Api.CurrentUser;
 
 namespace Secretariat.Api.Controllers
 {
@@ -12,21 +13,39 @@ namespace Secretariat.Api.Controllers
     {
         private readonly SecretariatDbContext _context;
         private readonly IFileStorage _fileStorage;
+        private readonly ICurrentUserService _currentUserService;
 
         public CorrespondenceAttachmentsController(
             SecretariatDbContext context,
-            IFileStorage fileStorage)
+            IFileStorage fileStorage,
+            ICurrentUserService currentUserService)
         {
             _context = context;
             _fileStorage = fileStorage;
+            _currentUserService = currentUserService;
+        
         }
 
         [HttpPost]
         public async Task<IActionResult> Upload(
+
+
             int correspondenceId,
             IFormFile file)
         {
+            var currentUser =
+            await _currentUserService.GetCurrentUserAsync();
 
+            if (currentUser == null)
+                return Unauthorized();
+
+            if (currentUser.Role != UserRole.Secretariat &&
+                currentUser.Role != UserRole.Administrator)
+            {
+                return StatusCode(
+                    403,
+                    "Tylko Sekretariat i Administrator mogą dodawać załączniki.");
+            }
 
             var correspondenceExists =
                 await _context.Correspondences
@@ -79,13 +98,20 @@ namespace Secretariat.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(int correspondenceId)
         {
-            var correspondenceExists = await _context.Correspondences
-                .AnyAsync(c => c.Id == correspondenceId);
+            var currentUser =
+            await _currentUserService.GetCurrentUserAsync();
 
-            if (!correspondenceExists)
-            {
-                return NotFound("Korespondencja nie istnieje.");
-            }
+            if (currentUser == null)
+                return Unauthorized();
+
+            var correspondence = await _context.Correspondences
+                .FirstOrDefaultAsync(c => c.Id == correspondenceId);
+
+            if (correspondence == null)
+                return NotFound();
+
+            if (!CanRead(currentUser, correspondence))
+                return StatusCode(403, "Brak dostępu do załączników.");
 
             var attachments = await _context.CorrespondenceAttachments
                 .Where(a => a.CorrespondenceId == correspondenceId)
@@ -102,12 +128,32 @@ namespace Secretariat.Api.Controllers
             return Ok(attachments);
         }
 
+
+
+
+
         [HttpGet("{attachmentId:int}/download")]
         public async Task<IActionResult> Download(
         
         int correspondenceId,
         int attachmentId)
         {
+
+            var currentUser =
+        await _currentUserService.GetCurrentUserAsync();
+            
+            if (currentUser == null)
+                return Unauthorized();
+
+            var correspondence = await _context.Correspondences
+                .FirstOrDefaultAsync(c => c.Id == correspondenceId);
+
+            if (correspondence == null)
+                return NotFound();
+
+            if (!CanRead(currentUser, correspondence))
+                return StatusCode(403, "Brak dostępu do załączników.");
+
             var attachment = await _context.CorrespondenceAttachments
                 .FirstOrDefaultAsync(a =>
                     a.Id == attachmentId &&
@@ -126,5 +172,14 @@ namespace Secretariat.Api.Controllers
                 attachment.ContentType,
                 attachment.OriginalFileName);
         }
+
+        private static bool CanRead(
+         AppUser user,
+         Correspondence correspondence)
+            {
+            return user.Role == UserRole.Administrator
+                || user.Role == UserRole.Secretariat
+                || correspondence.RecipientUserId == user.Id;
+            }
     }
 }
