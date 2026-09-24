@@ -427,3 +427,79 @@ W obecnym MVP aplikacja nie weryfikuje kryptograficznej poprawności podpisu ele
 
 Rozszerzono również endpoint szczegółów umowy o listę akceptujących, ich funkcje, statusy i daty decyzji.
 
+
+
+
+## Dzień 8 – zakończenie backendu 
+
+Ósmego dnia prac skupiono się na podstawowej kontroli dostępu,
+testowaniu istniejących funkcjonalności i zakończeniu lokalnej
+wersji backendu.
+
+### Kontrola dostępu
+
+Rozszerzono sprawdzanie uprawnień w trzech modułach:
+
+- Korespondencja przychodząca i wychodząca:
+  dostęp do dokumentów, edycji i załączników.
+- Umowy:
+  dostęp do szczegółów, listy umów i załączników.
+- Korespondencja wewnętrzna:
+  dostęp autora i przypisanych akceptujących.
+
+Sekretariat i Administrator posiadają szersze uprawnienia,
+zgodnie z przyjętymi zasadami projektu.
+
+### Testy końcowe
+
+Przeprowadzono 18 ręcznych testów HTTP w Visual Studio.
+
+Sprawdzono między innymi:
+- dostęp pracownika do własnej korespondencji,
+- blokowanie dostępu do cudzych dokumentów,
+- edycję korespondencji przez Sekretariat,
+- oznaczanie korespondencji jako przeczytanej,
+- przesyłanie i pobieranie załączników,
+- dostęp do zatwierdzonych umów,
+- filtrowanie listy umów,
+- dostęp autora i akceptujących do korespondencji wewnętrznej.
+
+Wszystkie 18 testów zakończyło się oczekiwanym rezultatem.
+
+### Zakres ukończonego MVP
+
+Backend obejmuje:
+
+- rejestrację korespondencji przychodzącej i wychodzącej,
+- powiązanie odpowiedzi z korespondencją przychodzącą,
+- obsługę załączników,
+- oznaczanie korespondencji jako przeczytanej,
+- korespondencję wewnętrzną z procesem akceptacji,
+- rejestrację i edycję umów,
+- zatwierdzanie umów przez kierownika i dyrektora,
+- możliwość odrzucenia umowy,
+- przesyłanie i pobieranie dokumentów umów,
+- podstawową kontrolę dostępu według ról.
+
+### Ograniczenia obecnej wersji
+
+Projekt jest lokalnym MVP 
+
+Użytkownik jest identyfikowany za pomocą nagłówka X-User-Id.
+Mechanizm ten służy wyłącznie do testów lokalnych
+
+
+Podpisane dokumenty można przesyłać i pobierać.
+
+Nie zaimplementowano rzeczywistej wysyłki powiadomień e-mail
+
+
+### Możliwości dalszego rozwoju
+
+- Logowanie za pomocą Microsoft Entra ID.
+- Powiadomienia e-mail przez Microsoft Graph.
+- Automatyczne testy API.
+- Przechowywanie plików w Azure Blob Storage.
+- Wdrożenie aplikacji i bazy danych do Azure.
+
+
