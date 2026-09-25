@@ -503,3 +503,51 @@ Nie zaimplementowano rzeczywistej wysyłki powiadomień e-mail
 - Wdrożenie aplikacji i bazy danych do Azure.
 
 
+
+### Dzień 9 – rozpoczęcie prac nad frontendem za pomocą codexa
+
+## Frontend
+
+Interfejs w języku polskim znajduje się w `ClientApp`. Obejmuje korespondencję,
+obieg wewnętrzny, umowy, użytkowników, załączniki i decyzje akceptujących.
+
+Przed pierwszym uruchomieniem wykonaj `npm ci` i `npm run build` w `ClientApp`,
+a następnie `dotnet run --launch-profile http` w katalogu `Secretariat.Api`.
+Cała aplikacja będzie dostępna pod adresem `http://localhost:5244`.
+Szczegóły uruchamiania i testów: [ClientApp/README.md](ClientApp/README.md).
+
+Przed ponowną kompilacją zatrzymaj uruchomioną instancję tego projektu
+przez `Ctrl+C` w jej terminalu lub przycisk Stop w Visual Studio.
+Komunikat MSB3027/MSB3021 o zablokowanym pliku EXE oznacza, że poprzednia
+instancja nadal działa. Nie wymaga usuwania kodu ani migracji bazy.
+
+
+## Administrator dodany po stworzeniu frontendu w codexie do łatwiejszego testowania 
+
+Pierwsze konto administratora utwórz jednorazowo po przygotowaniu bazy:
+
+```powershell
+dotnet run --launch-profile http -- --seed-admin true
+```
+
+Polecenie tworzy konto `Administrator`, `administrator@secretariat.test`, z rolą 4
+i kończy działanie. Ponowne wykonanie zwraca istniejącego administratora, bez
+duplikowania kont ani zmiany ról innych osób. Zwykłe uruchomienie serwera nie
+tworzy kont administracyjnych. Schemat bazy nie wymaga nowej migracji.
+
+Po uruchomieniu aplikacji wybierz administratora na dole lewego panelu, otwórz
+`Użytkownicy` i kliknij ołówek przy wybranej osobie. Można edytować imię i nazwisko,
+e-mail oraz przypisać jedną z ról: Pracownik, Akceptujący, Sekretariat, Administrator.
+Identyfikator Entra pozostaje zachowany. Starsze konta z rolą 0 wymagają wybrania
+poprawnej roli przed zapisem.
+
+Dodawanie i edycja kont (`POST` i `PUT /api/appusers`) wymagają roli Administrator
+również w API: brak rozpoznanego użytkownika daje 401, a inna rola 403.
+Administrator nie może odebrać sobie własnej roli; może to zrobić inny administrator.
+
+
+### Dalszy rozwój
+
+- Dodanie możliwości wysyłania e-maili KW poprzez pracowników
+- DOdanie możliwości przesyłania korespondencji przychodzącej do pracowników
+- powiadomienia o akceptacji lub odrzuceniu dokumentów wewnętrznych i umów
