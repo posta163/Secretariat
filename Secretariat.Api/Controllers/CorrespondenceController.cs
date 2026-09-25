@@ -41,8 +41,8 @@ namespace Secretariat.Api.Controllers
                 .Include(c => c.RecipientUser)
                 .AsQueryable();
 
-            if (currentUser.Role == UserRole.Employee ||
-                currentUser.Role == UserRole.Approver)
+            if (currentUser.Role != UserRole.Administrator &&
+                currentUser.Role != UserRole.Secretariat)
             {
                 query = query.Where(c =>
                     c.RecipientUserId == currentUser.Id);

@@ -276,6 +276,15 @@ namespace Secretariat.Api.Controllers
                 .AsNoTracking()
                 .AsQueryable();
 
+            if (currentUser.Role != UserRole.Administrator &&
+                currentUser.Role != UserRole.Secretariat)
+            {
+                query = query.Where(c =>
+                    c.CreatedByUserId == currentUser.Id ||
+                    c.ResponsibleUserId == currentUser.Id ||
+                    c.Approvers.Any(a => a.ApproverUserId == currentUser.Id));
+            }
+
             // Opcjonalne wyszukiwanie.
             if (!string.IsNullOrWhiteSpace(search))
             {

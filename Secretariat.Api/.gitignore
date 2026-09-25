@@ -1,0 +1,4 @@
+/ClientApp/node_modules/
+/ClientApp/test-results/
+/ClientApp/playwright-report/
+/wwwroot/
